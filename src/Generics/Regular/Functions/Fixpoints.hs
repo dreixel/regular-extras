@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts         #-}
 {-# LANGUAGE TypeOperators            #-}
 {-# LANGUAGE ScopedTypeVariables      #-}
 
@@ -16,55 +17,47 @@
 
 module Generics.Regular.Functions.Fixpoints where
 
-import Control.Applicative
 import Generics.Regular.Base
 
--- | Tree structure to store fixed points as found in the data type.
 
+-- | Tree structure to store fixed points as found in the data type.
 data Tree a = Leaf a | Node (Tree a) (Tree a)
  deriving Show
 
-instance Applicative Tree where
-  pure = Leaf
-  Leaf f   <*> Leaf x   = Leaf (f x)
-  Node f g <*> Node x y = Node (f <*> x) (g <*> y)
-  _        <*> _        = error "non-isomorphic applicative functor usage"
-
 foldTree :: (a -> b) -> (b -> b -> b) -> Tree a -> b
-foldTree l _ (Leaf x)   = l x
-foldTree l n (Node x y) = (foldTree l n x) `n` (foldTree l n y)
+foldTree l n (Leaf x)    = l x
+foldTree l n (Node x y)  = (foldTree l n x) `n` (foldTree l n y)
 
-sum :: Tree Int -> Int
-sum = foldTree id (+)
-
-instance Functor Tree where
-  fmap f = foldTree (Leaf . f) Node
+sumTree :: Tree Int -> Int
+sumTree = foldTree id (+)
 
 -- | The class to compute fixed points.
+class Fixpoints f where 
+    hFixpoints :: f a -> Tree Int
 
-class GFixp f where
-  fixp :: f a -> Tree Int
+instance (Fixpoints f, Fixpoints g) => Fixpoints (f :+: g) where
+    hFixpoints (_ :: (f :+: g) a) = 
+      Node (hFixpoints (undefined :: f a))
+           (hFixpoints (undefined :: g a))
+    
+instance (Fixpoints f, Constructor c) => Fixpoints (C c f) where
+    hFixpoints (_ :: (C c f) a) = hFixpoints (undefined :: f a)
 
-instance GFixp I where
-  fixp _ = Leaf 1
+instance (Fixpoints f, Fixpoints g) => Fixpoints (f :*: g) where
+    hFixpoints (_ :: (f :*: g) a) = 
+      let Leaf m = hFixpoints (undefined :: f a)
+          Leaf n = hFixpoints (undefined :: f b)
+      in Leaf (m + n)
 
-instance GFixp U where
-  fixp _ = Leaf 0
+instance Fixpoints I where
+    hFixpoints _ = Leaf 1
 
-instance GFixp (K a) where
-  fixp _ = Leaf 0
+instance Fixpoints U where
+    hFixpoints _ = Leaf 0
 
-instance (GFixp f, GFixp g) => GFixp (f :+: g) where
-  fixp _ = fixp (undefined :: f a)
-    `Node` fixp (undefined :: g a)
+instance Fixpoints (K a) where
+    hFixpoints _ = Leaf 0
 
-instance (GFixp f, GFixp g) => GFixp (f :*: g) where
-  fixp _ = (+) <$> fixp (undefined :: f a)
-               <*> fixp (undefined :: g a)
-
-instance GFixp f => GFixp (C c f) where
-  fixp _ = fixp (undefined :: f a)
-
-instance GFixp f => GFixp (S s f) where
-  fixp _ = fixp (undefined :: f a)
-
+-- | Return a tree structure of the fixed points of a datatype
+fixpoints :: (Regular a, Fixpoints (PF a)) => a -> Tree Int
+fixpoints x = hFixpoints (undefined `asTypeOf` (from x))

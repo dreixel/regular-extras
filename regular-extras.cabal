@@ -1,10 +1,12 @@
 name:                   regular-extras
 version:                0.1
-synopsis:               Additional functions for the regular generic
-                        programming library
+synopsis:               Additional functions for regular: arbitrary,
+                        coarbitrary, and binary get/put.
 description:
 
-  Additional functions for the regular generic programming library.
+  Additional functions for the regular [1] generic programming library, such
+  as arbitrary, coarbitrary, and binary get/put. These are not bundled with the
+  library because they introduce dependencies on additional packages.
   .
   \[1] <http://hackage.haskell.org/package/regular>
 
@@ -26,9 +28,7 @@ extra-source-files:     examples/Test.hs
 library
   hs-source-dirs:       src
   exposed-modules:      Generics.Regular.Functions.Arbitrary,
-                        Generics.Regular.Functions.Binary,
-                        Generics.Regular.Functions.Fixpoints,
-                        Generics.Regular.Functions.Seq
+                        Generics.Regular.Functions.Binary
                         
   build-depends:        base >= 4.0 && < 5, regular >= 0.1, 
                         QuickCheck == 1.2.0.0, binary

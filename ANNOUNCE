@@ -1,35 +1,16 @@
 regular-extras: Additional functions for the regular generic programming library
 ================================================================================
 
-Many generic programs require information about the recursive positions
-of a datatype. Examples include the generic fold, generic rewriting, and
-the Zipper data structure. This approach provides a fixed point view on
-data which allows these definitions for regular datatypes. It can be seen
-as a simplification of the Multirec library, which provides similar 
-functionality but for families of (possibly mutually recursive) datatypes.
+This package provides extra functions for the regular generic programming
+library. These functions operate on the fixed point view provided by regular.
+Currently the functions provided are:
+  * QuickCheck's arbitrary, with an option to provide size, and frequencies for
+    each constructor;
+  * QuickCheck's coarbitrary;
+  * Data.Binary get and put.
 
-This library is the underlying generic representation mechanism in the paper:
-  Thomas van Noort, Alexey Rodriguez, Stefan Holdermans, Johan Jeuring, 
-  Bastiaan Heeren. A Lightweight Approach to Datatype-Generic Rewriting. 
-  In Ralf Hinze and Don Syme, editors, Proceedings of the ACM SIGPLAN Workshop 
-  on Generic Programming, WGP 2008, Victoria, BC, Canada, September 20, 2008, 
-  pages 13–24. ACM Press, 2008.
-
-More information is available on the webpage: 
+More information is available on the webpage of regular: 
 http://www.cs.uu.nl/wiki/bin/view/GenericProgramming/Regular
-
-Features
---------
-
-* A simple library with a fixed point view
-
-* Includes detailed examples, such as the generic fold
-
-* Forms the basis for a generic rewriting library:
-  http://hackage.haskell.org/cgi-bin/hackage-scripts/package/rewriting
-
-* In its current form, this library does not support nested datatypes. Support 
-  to access parameters of a datatype is limited.
 
 Requirements
 ------------
@@ -40,15 +21,16 @@ Requirements
 Download
 --------
 
-Using cabal-install is the recommended way, since it will solve the dependencies :
+Using cabal-install is the recommended way, since it will solve the
+dependencies automatically:
 
   cabal install regular-extras
 
-Get the package:
+You can also download the package manually:
 
   http://hackage.haskell.org/package/regular-extras
 
-Get the source:
+Or get the source:
 
   svn checkout https://subversion.cs.uu.nl/repos/project.dgp-haskell.libraries/regular-extras/
 

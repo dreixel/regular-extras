@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleContexts         #-}
+{-# LANGUAGE FlexibleInstances        #-}
 {-# LANGUAGE ScopedTypeVariables      #-}
 {-# LANGUAGE TypeOperators            #-}
 
@@ -14,79 +15,121 @@
 -- Stability   :  experimental
 -- Portability :  non-portable
 --
--- Summary: Generic Test.QuickCheck instances.
+-- Summary: Generic "Test.QuickCheck" instances.
 -----------------------------------------------------------------------------
 
-module Generics.Regular.Functions.Arbitrary where
+module Generics.Regular.Functions.Arbitrary (
+  
+    -- * Generic arbitrary functionality
+    FrequencyTable, GArbitrary(..), garbitraryWith, garbitrary,
+    
+    -- * Generic coarbitrary functionality
+    GCoArbitrary(..), gcoarbitrary
+  
+  ) where
 
-import Control.Applicative
-import Control.Monad
-import Generics.Regular.Base
 import Generics.Regular.Functions.Fixpoints
-import Prelude hiding (sum)
-import Test.QuickCheck
+import Generics.Regular.Functions.ConNames
+import Generics.Regular.Base
 
--- Applicative and alternative instances for the random number generator.
+import Test.QuickCheck (Arbitrary, arbitrary, Gen, frequency, coarbitrary,
+                        sized, variant)
+import Data.Maybe (fromJust)
 
-instance Applicative Gen where
-  (<*>) = ap
-  pure  = return
+-- | A frequency table detailing how often certain constructors should be
+-- picked. The 'String' corresponds to the constructor name, as returned by
+-- 'Generics.Regular.Functions.ConNames.conNames'.
+type FrequencyTable = [(String,Int)]
 
-instance Alternative Gen where
-  a <|> b = oneof [a, b]
-  empty   = oneof []
+frequencies :: [String] -> FrequencyTable -> Int
+frequencies [] _ = 0
+frequencies (s:ss) ft = let freqs = case lookup s ft of
+                                      Just f  -> f
+                                      Nothing -> 1
+                        in freqs + frequencies ss ft
 
--- Generically create arbitrary instances for arbitrary data types.
+-- | Generic Arbitrary class
+class GArbitrary f where 
+  harbitrary :: (Int -> Gen a) -> FrequencyTable -> Int -> Int
+             -> Maybe (Gen (f a))
 
-data ArbParams a = AP
-  { rec     :: ArbParams a -> Int -> Gen a
-  , divisor :: Int
-  }
+instance (Fixpoints f, Fixpoints g, ConNames f, GArbitrary f,
+            ConNames g, GArbitrary g) => GArbitrary (f :+: g) where
+  harbitrary r ft _ n = 
+    let (Node ff fg)   = hFixpoints (undefined :: (f :+: g) a)
+        fConNames      = hconNames (undefined :: f a)
+        gConNames      = hconNames (undefined :: g a)
+        fFrequency     = calcFreq n (sumTree ff) (frequencies fConNames ft)
+        gFrequency     = calcFreq n (sumTree fg) (frequencies gConNames ft)
+        calcFreq 0 0 _ = 1
+        calcFreq 0 _ _ = 0
+        calcFreq _ _ d = d
+        rl = maybe [] (\x -> [(fFrequency,fmap L x)]) 
+               (harbitrary r ft (sumTree ff) n)
+        rr = maybe [] (\x -> [(gFrequency,fmap R x)])
+               (harbitrary r ft (sumTree fg) n)
+    in if null (rl ++ rr) then Nothing else return $ frequency $ rl ++ rr
 
-class GArbitrary f where
-  garbitrary'   :: ArbParams a -> Int -> Gen (f a)
-  gcoarbitrary' :: (Int -> a -> Gen (g b) -> Gen (g b)) -> Int -> f a -> Gen (g b) -> Gen (g b)
-
+instance (GArbitrary f, Constructor c) => GArbitrary (C c f) where
+  harbitrary r ft m n = fmap (fmap C) (harbitrary r ft m n)
+                       
 instance GArbitrary I where
-  garbitrary' p@(AP r d) t = I <$> r p (t `div` d)
-  gcoarbitrary' r o (I a) = r o a
+  harbitrary r _ m n = return $ fmap I $ r (n `div` m)
 
 instance GArbitrary U where
-  garbitrary' _ _ = pure U
-  gcoarbitrary' _ _ _ = id
+  harbitrary _ _ _ _ = return $ return U
 
-instance Arbitrary a => GArbitrary (K a) where
-  garbitrary' _ _ = K <$> arbitrary
-  gcoarbitrary' _ _ (K a) = coarbitrary a
-
-instance (GFixp f, GFixp g, GArbitrary f, GArbitrary g) => GArbitrary (f :+: g) where
-  garbitrary' p s = frequency [r fpl L, r fpr R]
-    where r a b = (fr a, b <$> garbitrary' p {divisor = sum a} s)
-          (Node fpl fpr) = fixp (undefined :: (f :+: g) a)
-          fr = foldTree (f s) (+)
-          f 0 0 = 1 -- if our size (s) is zero, we only give non-recursive constructors a chance
-          f 0 _ = 0
-          f _ x = x + 1
-  gcoarbitrary' r o (L f) = gcoarbitrary' r  o f
-  gcoarbitrary' r o (R f) = gcoarbitrary' r (o + sum fpl) f
-    where (Node fpl _) = fixp (undefined :: (f :+: g) a)
+instance (Arbitrary a) => GArbitrary (K a) where
+  harbitrary _ _ _ _ = return $ fmap K $ arbitrary
 
 instance (GArbitrary f, GArbitrary g) => GArbitrary (f :*: g) where
-  garbitrary' p s = (:*:) <$> garbitrary' p s <*> garbitrary' p s
-  gcoarbitrary' r _ (f :*: g) = gcoarbitrary' r 0 f . gcoarbitrary' r 0 g
+  harbitrary r ft m n = do rl <- harbitrary r ft m n
+                           rr <- harbitrary r ft m n
+                           return $ do
+                             x <- rl
+                             y <- rr
+                             return (x :*: y)
 
-instance GArbitrary f => GArbitrary (C c f) where
-  garbitrary' p c = C <$> garbitrary' p c
-  gcoarbitrary' f o (C c) = variant o . gcoarbitrary' f 0 c
+-- | Generic arbitrary function, sized and with custom constructor frequencies.
 
-instance GArbitrary f => GArbitrary (S s f) where
-  garbitrary' p s = S <$> garbitrary' p s
-  gcoarbitrary' f o (S s) = variant o . gcoarbitrary' f 0 s
+-- This function does not require any particular
+-- nesting order of the sums of the generic representation, but it does require
+-- every constructor to be properly tagged with C. Representations generated
+-- with the supplied Template Haskell code are compliant.
+garbitraryWith :: (Regular a, GArbitrary (PF a))
+           => FrequencyTable -> Int -> Gen a
+garbitraryWith ft = fmap to . fromJust . harbitrary (garbitraryWith ft) ft 1
 
--- The first undefined gets filled in with garbitraryFix, the second in the instance for sums.
-garbitrary :: (Regular a, GArbitrary (PF a)) => Int -> Gen a
-garbitrary s = garbitraryHelper (AP undefined 1) s
+-- | Generic arbitrary function with default sizes and constructor frequencies.
+garbitrary :: (Regular a, GArbitrary (PF a)) => Gen a
+garbitrary = sized (garbitraryWith [])
 
-garbitraryHelper :: (Regular a, GArbitrary (PF a)) => ArbParams a -> Int -> Gen a
-garbitraryHelper p s = to <$> garbitrary' p {rec = garbitraryHelper} s
 
+-- | Generic CoArbitrary class
+class GCoArbitrary f where 
+  hcoarbitrary :: (b -> Gen a -> Gen a) -> Int -> f b -> Gen a -> Gen a
+
+instance (GCoArbitrary f, GCoArbitrary g, ConNames g)
+            => GCoArbitrary (f :+: g) where
+  hcoarbitrary r n (L x) = hcoarbitrary r n x
+  hcoarbitrary r n (R x) = hcoarbitrary r (n + length (hconNames x)) x
+
+instance (GCoArbitrary f, Constructor c) => GCoArbitrary (C c f) where
+  hcoarbitrary r n (C x) = variant n . hcoarbitrary r n x
+
+instance GCoArbitrary I where
+  hcoarbitrary r _ (I x) = r x
+
+instance GCoArbitrary U where
+  hcoarbitrary _ _ _ = id
+
+instance (Arbitrary a) => GCoArbitrary (K a) where
+  hcoarbitrary _ _ (K a) = coarbitrary a
+
+instance (GCoArbitrary f, GCoArbitrary g) => GCoArbitrary (f :*: g) where
+  hcoarbitrary r n (x1 :*: x2) = hcoarbitrary r n x1 . hcoarbitrary r n x2
+
+-- | Generic coarbitrary function.
+gcoarbitrary :: (Regular b, GCoArbitrary (PF b))
+           => b -> Gen a -> Gen a
+gcoarbitrary = hcoarbitrary gcoarbitrary 0 . from
