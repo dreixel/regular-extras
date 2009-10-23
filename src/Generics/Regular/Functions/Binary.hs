@@ -34,7 +34,7 @@
 module Generics.Regular.Functions.Binary (
     
     -- * Binary put and get
-    GBinary, gput, gget
+    Binary, gput, gget
     
   ) where
 
@@ -44,45 +44,45 @@ import qualified Data.Binary as B
 
 -- * Generic Data.Binary instances.
 
-class GBinary f where
+class Binary f where
   hput :: (r -> B.Put)   -> f r -> B.Put
   hget :: (     B.Get r) ->        B.Get (f r)
 
-instance GBinary I where
+instance Binary I where
   hput f (I x) = f x
   hget f       = I <$> f
 
-instance B.Binary a => GBinary (K a) where
+instance B.Binary a => Binary (K a) where
   hput _ (K x) = B.put x
   hget _       = K <$> B.get
 
-instance GBinary U where
+instance Binary U where
   hput _ _ = B.put ()
   hget _   = return U
 
-instance (GBinary f, GBinary g) => GBinary (f :+: g) where
+instance (Binary f, Binary g) => Binary (f :+: g) where
   hput t (L x) = B.put True  >> hput t x
   hput t (R y) = B.put False >> hput t y
   hget t       = B.get >>= \v -> if v then L <$> hget t else R <$> hget t
 
-instance (GBinary f, GBinary g) => GBinary (f :*: g) where
+instance (Binary f, Binary g) => Binary (f :*: g) where
   hput t (x :*: y) = hput t x >> hput t y
   hget t           = (:*:) <$> hget t <*> hget t
 
-instance GBinary f => GBinary (C c f) where
+instance Binary f => Binary (C c f) where
   hput t (C x) = hput t x
   hget t       = C <$> hget t
 
-instance GBinary f => GBinary (S s f) where
+instance Binary f => Binary (S s f) where
   hput t (S x) = hput t x
   hget t       = S <$> hget t
 
 -- | Generic binary @put@ to be used with "Data.Binary.Put".
 
-gput :: (Regular a, GBinary (PF a)) => a -> B.Put
+gput :: (Regular a, Binary (PF a)) => a -> B.Put
 gput p = hput (\q -> gput q) (from p)
 
 -- | Generic binary @get@ to be used with "Data.Binary.Get".
 
-gget :: (Regular a, GBinary (PF a)) => B.Get a
+gget :: (Regular a, Binary (PF a)) => B.Get a
 gget = to <$> hget gget

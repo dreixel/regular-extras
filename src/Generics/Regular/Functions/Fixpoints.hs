@@ -15,7 +15,12 @@
 -- Summary: Auxiliary module for "Generics.Regular.Functions.Fixpoints".
 -----------------------------------------------------------------------------
 
-module Generics.Regular.Functions.Fixpoints where
+module Generics.Regular.Functions.Fixpoints (
+
+    Fixpoints(..), fixpoints,
+    Tree(..), foldTree, sumTree
+    
+  ) where
 
 import Generics.Regular.Base
 
@@ -25,7 +30,7 @@ data Tree a = Leaf a | Node (Tree a) (Tree a)
  deriving Show
 
 foldTree :: (a -> b) -> (b -> b -> b) -> Tree a -> b
-foldTree l n (Leaf x)    = l x
+foldTree l _ (Leaf x)    = l x
 foldTree l n (Node x y)  = (foldTree l n x) `n` (foldTree l n y)
 
 sumTree :: Tree Int -> Int

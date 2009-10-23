@@ -29,7 +29,9 @@ library
   hs-source-dirs:       src
   exposed-modules:      Generics.Regular.Functions.Arbitrary,
                         Generics.Regular.Functions.Binary
-                        
-  build-depends:        base >= 4.0 && < 5, regular >= 0.1, 
-                        QuickCheck == 1.2.0.0, binary
+
+  other-modules:        Generics.Regular.Functions.Fixpoints
+  
+  build-depends:        base >= 4.0 && < 5, regular >= 0.1,
+                        QuickCheck == 1.2.0.0, binary >= 0.2
   ghc-options:          -Wall

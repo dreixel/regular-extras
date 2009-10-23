@@ -9,7 +9,7 @@ Currently the functions provided are:
   * QuickCheck's coarbitrary;
   * Data.Binary get and put.
 
-More information is available on the webpage of regular: 
+More information is available on the webpage of regular:
 http://www.cs.uu.nl/wiki/bin/view/GenericProgramming/Regular
 
 Requirements
