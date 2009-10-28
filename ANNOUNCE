@@ -10,7 +10,7 @@ Currently the functions provided are:
   * Data.Binary get and put.
 
 More information is available on the webpage of regular:
-http://www.cs.uu.nl/wiki/bin/view/GenericProgramming/Regular
+http://www.cs.uu.nl/wiki/GenericProgramming/Regular
 
 Requirements
 ------------
