@@ -51,7 +51,7 @@ instance (Fixpoints f, Constructor c) => Fixpoints (C c f) where
 instance (Fixpoints f, Fixpoints g) => Fixpoints (f :*: g) where
     hFixpoints (_ :: (f :*: g) a) = 
       let Leaf m = hFixpoints (undefined :: f a)
-          Leaf n = hFixpoints (undefined :: f b)
+          Leaf n = hFixpoints (undefined :: g a)
       in Leaf (m + n)
 
 instance Fixpoints I where

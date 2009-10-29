@@ -1,5 +1,5 @@
 name:                   regular-extras
-version:                0.1.1
+version:                0.1.2
 synopsis:               Additional functions for regular: arbitrary,
                         coarbitrary, and binary get/put.
 description:
