@@ -12,6 +12,7 @@ module Test where
 import Generics.Regular
 import Generics.Regular.Functions.Arbitrary
 import Generics.Regular.Functions.Binary
+import Generics.Regular.Functions.Seq
 
 import Test.QuickCheck (quickCheck, sized, elements, generate, Gen)
 import qualified Test.QuickCheck as Q (Arbitrary(..))
@@ -88,3 +89,6 @@ ex3 = let propC :: Choice -> Bool
           propL :: Logic -> Bool
           propL x = runGet gget (runPut (gput x)) == x
       in quickCheck propC >> quickCheck propL
+
+-- Testing deep seq
+ex4 = gdseq (Not (T :->: (error "deep seq works"))) ()
