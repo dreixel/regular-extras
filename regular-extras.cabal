@@ -1,5 +1,5 @@
 name:                   regular-extras
-version:                0.1.2
+version:                0.2.0
 synopsis:               Additional functions for regular: arbitrary,
                         coarbitrary, and binary get/put.
 description:
@@ -11,7 +11,7 @@ description:
   \[1] <http://hackage.haskell.org/package/regular>
 
 category:               Generics
-copyright:              (c) 2009 Universiteit Utrecht
+copyright:              (c) 2010 Universiteit Utrecht
 license:                BSD3
 license-file:           LICENSE
 author:                 Jose Pedro Magalhaes,
@@ -28,10 +28,12 @@ extra-source-files:     examples/Test.hs
 library
   hs-source-dirs:       src
   exposed-modules:      Generics.Regular.Functions.Arbitrary,
-                        Generics.Regular.Functions.Binary
+                        Generics.Regular.Functions.Binary,
+                        Generics.Regular.Functions.Seq
 
   other-modules:        Generics.Regular.Functions.Fixpoints
   
-  build-depends:        base >= 4.0 && < 5, regular >= 0.2 && < 0.3,
-                        QuickCheck == 1.2.0.0, binary >= 0.2
+  build-depends:        base >= 4.0 && < 5, regular >= 0.3 && < 0.4,
+                        QuickCheck == 1.2.0.0, binary >= 0.2,
+                        deepseq < 2
   ghc-options:          -Wall
