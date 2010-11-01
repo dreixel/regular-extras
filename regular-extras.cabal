@@ -1,5 +1,5 @@
 name:                   regular-extras
-version:                0.2.0
+version:                0.2.1
 synopsis:               Additional functions for regular: arbitrary,
                         coarbitrary, and binary get/put.
 description:
@@ -34,6 +34,6 @@ library
   other-modules:        Generics.Regular.Functions.Fixpoints
   
   build-depends:        base >= 4.0 && < 5, regular >= 0.3 && < 0.4,
-                        QuickCheck == 1.2.0.0, binary >= 0.2,
+                        QuickCheck >= 1.2 && < 1.3, binary >= 0.2,
                         deepseq < 2
   ghc-options:          -Wall
