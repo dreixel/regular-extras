@@ -3,6 +3,7 @@
 {-# LANGUAGE OverlappingInstances     #-}
 {-# LANGUAGE ScopedTypeVariables      #-}
 {-# LANGUAGE TypeOperators            #-}
+{-# LANGUAGE CPP                      #-}
 
 {-# OPTIONS_GHC -fno-warn-orphans     #-}
 
@@ -34,7 +35,7 @@ import Generics.Regular.Functions.ConNames
 import Generics.Regular.Base
 
 import Test.QuickCheck (Gen, frequency, sized, variant)
-import qualified Test.QuickCheck as Q (Arbitrary, arbitrary, coarbitrary)
+import qualified Test.QuickCheck as Q
 import Data.Maybe (fromJust)
 
 -- | A frequency table detailing how often certain constructors should be
@@ -124,7 +125,11 @@ instance CoArbitrary I where
 instance CoArbitrary U where
   hcoarbitrary _ _ _ = id
 
+#if MIN_VERSION_QuickCheck(2,1,0)
+instance (Q.CoArbitrary a) => CoArbitrary (K a) where
+#else
 instance (Q.Arbitrary a) => CoArbitrary (K a) where
+#endif
   hcoarbitrary _ _ (K a) = Q.coarbitrary a
 
 instance (CoArbitrary f, CoArbitrary g) => CoArbitrary (f :*: g) where

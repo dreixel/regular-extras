@@ -1,3 +1,5 @@
+version 0.2.2: Add support for QuickCheck 2
+
 version 0.2.1: relax dependency on QuickCheck
 
 version 0.2.0: add gdseq (using the deepseq package for base cases)
