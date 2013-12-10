@@ -1,3 +1,5 @@
+version 0.2.3: Expand accepted versions of QuickCheck 2
+
 version 0.2.2: Add support for QuickCheck 2
 
 version 0.2.1: relax dependency on QuickCheck
